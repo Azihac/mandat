@@ -15,6 +15,7 @@ def get_mandat():
             page = browser.new_page()
             page.goto("https://mandat.uzbmb.uz/Mandat2024/")
 
+            page.wait_for_selector('input[name="id"]')  # yoki to‘g‘ri selektor
             page.fill("input[name=id]", user_id)
             page.click("button[type=submit]")
             page.wait_for_timeout(3000)
