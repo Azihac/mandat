@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from playwright.sync_api import sync_playwright
+import os
 
 app = Flask(__name__)
 
@@ -15,20 +16,18 @@ def get_mandat():
             context = browser.new_context()
             page = context.new_page()
 
-            # 1. Kirish
+            # Kirish
             page.goto("https://mandat.uzbmb.uz/Mandat2024/", timeout=60000)
-            page.wait_for_selector('input#SearchId')  # TO‘G‘RI SELECTOR
-            page.fill('input#SearchId', user_id)
-
-            # 2. Qidirish tugmasi
+            page.wait_for_selector('#SearchId')
+            page.fill('#SearchId', user_id)
             page.click("button.btn.btn-primary[type='submit']")
             page.wait_for_timeout(3000)
 
-            # 3. "Batafsil" tugmasi
-            page.click("a.btn.btn-info")  # bu linkdagi batafsil tugmasi
+            # Batafsil bosish
+            page.click("a.btn.btn-info")
             page.wait_for_timeout(3000)
 
-            # 4. Ma’lumotlarni ajratib olish
+            # Ma'lumotlarni olish
             full_name = page.locator("strong:has-text('F.I.SH')").nth(0).evaluate("e => e.parentElement.textContent.split(':')[1].trim()")
             score = page.locator("strong:has-text('To‘plagan ball')").nth(0).evaluate("e => e.parentElement.textContent.split(':')[1].trim()")
 
@@ -47,7 +46,6 @@ def get_mandat():
                     })
 
             browser.close()
-
             return jsonify({
                 "id": user_id,
                 "full_name": full_name,
@@ -58,3 +56,6 @@ def get_mandat():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host='0.0.0.0', port=port)
