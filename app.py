@@ -3,7 +3,7 @@ from playwright.sync_api import sync_playwright
 
 app = Flask(__name__)
 
-@app.route('/api/mandat', methods=['GET'])
+@app.route('/api/mandat')
 def get_mandat():
     user_id = request.args.get('id')
     if not user_id:
@@ -12,22 +12,29 @@ def get_mandat():
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto("https://mandat.uzbmb.uz/Mandat2024/")
+            context = browser.new_context()
+            page = context.new_page()
 
-            page.wait_for_selector('input[name="id"]')  # yoki to‘g‘ri selektor
-            page.fill("input[name=id]", user_id)
-            page.click("button[type=submit]")
+            # 1. Kirish
+            page.goto("https://mandat.uzbmb.uz/Mandat2024/", timeout=60000)
+            page.wait_for_selector('input#SearchId')  # TO‘G‘RI SELECTOR
+            page.fill('input#SearchId', user_id)
+
+            # 2. Qidirish tugmasi
+            page.click("button.btn.btn-primary[type='submit']")
             page.wait_for_timeout(3000)
-            page.click("text=Batafsil")
-            page.wait_for_timeout(2000)
 
-            full_name = page.locator("text=F.I.SH").nth(0).evaluate("node => node.nextSibling.textContent").strip()
-            score = page.locator("text=To‘plagan ball").nth(0).evaluate("node => node.nextSibling.textContent").strip()
+            # 3. "Batafsil" tugmasi
+            page.click("a.btn.btn-info")  # bu linkdagi batafsil tugmasi
+            page.wait_for_timeout(3000)
 
-            rows = page.locator("table tr").all()
+            # 4. Ma’lumotlarni ajratib olish
+            full_name = page.locator("strong:has-text('F.I.SH')").nth(0).evaluate("e => e.parentElement.textContent.split(':')[1].trim()")
+            score = page.locator("strong:has-text('To‘plagan ball')").nth(0).evaluate("e => e.parentElement.textContent.split(':')[1].trim()")
+
             directions = []
-            for row in rows[1:]:
+            rows = page.locator("table tbody tr").all()
+            for row in rows:
                 cells = row.locator("td").all()
                 if len(cells) >= 6:
                     directions.append({
@@ -38,6 +45,7 @@ def get_mandat():
                         "Grant": cells[4].inner_text().strip(),
                         "Kontrakt": cells[5].inner_text().strip(),
                     })
+
             browser.close()
 
             return jsonify({
@@ -46,8 +54,7 @@ def get_mandat():
                 "ball": score,
                 "directions": directions
             })
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
