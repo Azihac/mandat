@@ -11,56 +11,59 @@ def get_mandat():
         return jsonify({'error': 'ID yuborilmadi'}), 400
 
     try:
-    print(f"🟢 ID qabul qilindi: {user_id}")
+        print(f"🟢 ID qabul qilindi: {user_id}")
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context()
+            page = context.new_page()
 
-        print("🔄 Saytga kirilmoqda...")
-        page.goto("https://mandat.uzbmb.uz/", timeout=60000)
-        page.wait_for_selector('input[placeholder="ID kiriting"]', timeout=60000)
-        page.fill('input[placeholder="ID kiriting"]', user_id)
-        page.click("button[type='submit']")
-        page.wait_for_timeout(3000)
-        print("✅ Qidirish bosildi")
+            print("🔄 Saytga kirilmoqda...")
+            page.goto("https://mandat.uzbmb.uz/", timeout=60000)
 
-        page.wait_for_selector("a.btn.btn-info", timeout=10000)
-        page.click("a.btn.btn-info")
-        page.wait_for_timeout(3000)
-        print("✅ Batafsil bosildi")
+            page.wait_for_selector('input[placeholder="ID kiriting"]', timeout=60000)
+            page.fill('input[placeholder="ID kiriting"]', user_id)
+            page.click("button[type='submit']")
+            print("✅ Qidirish bosildi")
+            page.wait_for_timeout(3000)
 
-        # Mana bu ikkisini saqlang
-        full_name = page.locator("strong:has-text('F.I.SH')").nth(0).evaluate("e => e.parentElement.textContent.split(':')[1].trim()")
-        score = page.locator("strong:has-text('To‘plagan ball')").nth(0).evaluate("e => e.parentElement.textContent.split(':')[1].trim()")
+            page.wait_for_selector("a.btn.btn-info", timeout=10000)
+            page.click("a.btn.btn-info")
+            print("✅ Batafsil bosildi")
+            page.wait_for_timeout(3000)
 
-        directions = []
-        rows = page.locator("table tbody tr").all()
-        for row in rows:
-            cells = row.locator("td").all()
-            if len(cells) >= 6:
-                directions.append({
-                    "OTM": cells[0].inner_text().strip(),
-                    "Yo‘nalish": cells[1].inner_text().strip(),
-                    "Ta'lim shakli": cells[2].inner_text().strip(),
-                    "Shifr": cells[3].inner_text().strip(),
-                    "Grant": cells[4].inner_text().strip(),
-                    "Kontrakt": cells[5].inner_text().strip(),
-                })
+            full_name = page.locator("strong:has-text('F.I.SH')").nth(0).evaluate(
+                "e => e.parentElement.textContent.split(':')[1].trim()")
+            score = page.locator("strong:has-text('To‘plagan ball')").nth(0).evaluate(
+                "e => e.parentElement.textContent.split(':')[1].trim()")
 
-        browser.close()
-        return jsonify({
-            "id": user_id,
-            "full_name": full_name,
-            "ball": score,
-            "directions": directions
-        })
+            directions = []
+            rows = page.locator("table tbody tr").all()
+            for row in rows:
+                cells = row.locator("td").all()
+                if len(cells) >= 6:
+                    directions.append({
+                        "OTM": cells[0].inner_text().strip(),
+                        "Yo‘nalish": cells[1].inner_text().strip(),
+                        "Ta'lim shakli": cells[2].inner_text().strip(),
+                        "Shifr": cells[3].inner_text().strip(),
+                        "Grant": cells[4].inner_text().strip(),
+                        "Kontrakt": cells[5].inner_text().strip(),
+                    })
 
-except Exception as e:
-    print("❌ XATO:", e)
-    return jsonify({'error': str(e)}), 500
+            browser.close()
 
+            print("✅ Ma'lumotlar muvaffaqiyatli olindi")
+            return jsonify({
+                "id": user_id,
+                "full_name": full_name,
+                "ball": score,
+                "directions": directions
+            })
+
+    except Exception as e:
+        print("❌ XATO:", e)
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8000))
