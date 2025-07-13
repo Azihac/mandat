@@ -8,12 +8,14 @@ app = Flask(__name__)
 def get_mandat():
     user_id = request.args.get('id')
     if not user_id:
+        print("🚫 ID kiritilmagan")
         return jsonify({'error': 'ID yuborilmadi'}), 400
 
     try:
         print(f"🟢 ID qabul qilindi: {user_id}")
 
         with sync_playwright() as p:
+            print("🧠 Playwright ishga tushdi")
             browser = p.chromium.launch(headless=True)
             context = browser.new_context()
             page = context.new_page()
@@ -21,17 +23,22 @@ def get_mandat():
             print("🔄 Saytga kirilmoqda...")
             page.goto("https://mandat.uzbmb.uz/", timeout=60000)
 
+            print("⌛ ID inputni kutyapti...")
             page.wait_for_selector('input[placeholder="ID kiriting"]', timeout=60000)
             page.fill('input[placeholder="ID kiriting"]', user_id)
+            print("✅ ID yozildi")
+
             page.click("button[type='submit']")
-            print("✅ Qidirish bosildi")
+            print("🔍 Qidirish bosildi")
             page.wait_for_timeout(3000)
 
+            print("📄 Batafsil tugmasini kutyapti...")
             page.wait_for_selector("a.btn.btn-info", timeout=10000)
             page.click("a.btn.btn-info")
             print("✅ Batafsil bosildi")
             page.wait_for_timeout(3000)
 
+            print("📤 Ma'lumotlarni olish...")
             full_name = page.locator("strong:has-text('F.I.SH')").nth(0).evaluate(
                 "e => e.parentElement.textContent.split(':')[1].trim()")
             score = page.locator("strong:has-text('To‘plagan ball')").nth(0).evaluate(
@@ -53,7 +60,7 @@ def get_mandat():
 
             browser.close()
 
-            print("✅ Ma'lumotlar muvaffaqiyatli olindi")
+            print("✅ Ma'lumotlar tayyor")
             return jsonify({
                 "id": user_id,
                 "full_name": full_name,
@@ -62,9 +69,10 @@ def get_mandat():
             })
 
     except Exception as e:
-        print("❌ XATO:", e)
+        print("❌ XATO:", str(e))
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8000))
+    print(f"🚀 API {port}-portda ishga tushdi")
     app.run(host='0.0.0.0', port=port)
