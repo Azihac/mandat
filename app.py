@@ -16,18 +16,19 @@ def get_mandat():
             context = browser.new_context()
             page = context.new_page()
 
-            # Kirish
-            page.goto("https://mandat.uzbmb.uz/Mandat2024/", timeout=60000)
-            page.wait_for_selector('input[placeholder="ID raqamni kiriting"]')
-            page.fill('input[placeholder="ID raqamni kiriting"]', user_id)
-            page.click("button.btn.btn-primary[type='submit']")
+            # 1-qadam: Kirish sahifasi
+            page.goto("https://mandat.uzbmb.uz/", timeout=60000)
+            page.wait_for_selector('input[placeholder="ID kiriting"]', timeout=60000)
+            page.fill('input[placeholder="ID kiriting"]', user_id)
+            page.click("button[type='submit']")
             page.wait_for_timeout(3000)
 
-            # Batafsil bosish
+            # 2-qadam: Foydalanuvchilar ro'yxatida "Batafsil" tugmasi bosiladi
+            page.wait_for_selector("a.btn.btn-info", timeout=10000)
             page.click("a.btn.btn-info")
             page.wait_for_timeout(3000)
 
-            # Ma'lumotlarni olish
+            # 3-qadam: Batafsil sahifasidagi ma'lumotlarni olish
             full_name = page.locator("strong:has-text('F.I.SH')").nth(0).evaluate("e => e.parentElement.textContent.split(':')[1].trim()")
             score = page.locator("strong:has-text('To‘plagan ball')").nth(0).evaluate("e => e.parentElement.textContent.split(':')[1].trim()")
 
