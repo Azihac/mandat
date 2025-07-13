@@ -18,8 +18,8 @@ def get_mandat():
 
             # Kirish
             page.goto("https://mandat.uzbmb.uz/Mandat2024/", timeout=60000)
-            page.wait_for_selector('#SearchId')
-            page.fill('#SearchId', user_id)
+            page.wait_for_selector('input[placeholder="ID kiriting"]')
+            page.fill('input[placeholder="ID kiriting"]', user_id)
             page.click("button.btn.btn-primary[type='submit']")
             page.wait_for_timeout(3000)
 
